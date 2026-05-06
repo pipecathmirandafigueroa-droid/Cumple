@@ -1,0 +1,22 @@
+{
+  "name": "Birthday Hub Luxury",
+  "short_name": "BdayHub",
+  "description": "An exclusive celebratory space for a special life.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#d4af37",
+  "icons": [
+    {
+      "src": "/assets/images/reina.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/reina.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
