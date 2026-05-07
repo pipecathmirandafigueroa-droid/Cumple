@@ -17,20 +17,18 @@ export async function POST(request: Request) {
         // Empezamos con el primer video como base
         // Aplicamos normalización a 720x1280 (vertical) para consistencia tipo "Reels/Tiktok"
         const baseVideoId = videoIds[0];
-        const normalization = 'c_fill,w_720,h_1280,q_auto,f_mp4';
+        const normalization = 'c_fill,w_720,h_1280';
         
         let transformation = `${normalization}`;
 
         // Concatenar el resto de los videos
-        // Cloudinary usa fl_splice para unir videos. Cada uno necesita su propia normalización.
         for (let i = 1; i < videoIds.length; i++) {
             const vid = videoIds[i];
-            // l_video:<id>/c_fill,w_720,h_1280/fl_splice
-            transformation += `/l_video:${vid.replace(/\//g, ':')}/c_fill,w_720,h_1280/fl_splice`;
+            // IMPORTANTE: Dentro de l_video, los parámetros se separan con COMAS
+            transformation += `/l_video:${vid.replace(/\//g, ':')},c_fill,w_720,h_1280/fl_splice`;
         }
 
         // Añadir música de fondo
-        // l_audio:<audio_id>/fl_layer_apply,eo_10 (eo_10 es opcional si queremos limitar, pero fl_splice suma duraciones)
         if (audioId) {
             transformation += `/l_audio:${audioId.replace(/\//g, ':')}/fl_layer_apply`;
         }
@@ -41,7 +39,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ 
             success: true, 
             url: generatedUrl,
-            message: 'URL de transformación generada con éxito. Cloudinary procesará la unión al vuelo.'
+            message: 'URL generada con éxito. Cloudinary procesará la unión.'
         });
 
     } catch (error: any) {
