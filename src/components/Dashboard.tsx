@@ -8,7 +8,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import AdminPanel from "@/components/AdminPanel";
 import PremiumToast, { PremiumToastItem, PremiumToastType } from "@/components/PremiumToast";
 import { supabase } from "@/lib/supabase";
-import { Send, Lock, User, MessageSquare, Heart, LogOut, Shield, Edit2, Save, X, Clapperboard, Trash2, Volume2, VolumeX, Sparkles, ChevronRight, Play, Film } from "lucide-react";
+import { Send, Lock, User, MessageSquare, Heart, LogOut, Shield, Edit2, Save, X, Clapperboard, Trash2, Volume2, VolumeX, Sparkles, ChevronLeft, ChevronRight, Play, Film } from "lucide-react";
 import { useRouter } from "next/navigation";
 import VideoUpload from "@/components/VideoUpload";
 import { useEffect, useRef } from "react";
@@ -147,6 +147,32 @@ export default function Dashboard() {
     const [allVideos, setAllVideos] = useState<Video[]>([]);
     const [isLoadingGallery, setIsLoadingGallery] = useState(true);
     const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+
+    const goToNextVideo = () => {
+        if (!selectedVideo || allVideos.length === 0) return;
+        const currentIndex = allVideos.findIndex(v => v.id === selectedVideo.id);
+        const nextIndex = (currentIndex + 1) % allVideos.length;
+        setSelectedVideo(allVideos[nextIndex]);
+    };
+
+    const goToPrevVideo = () => {
+        if (!selectedVideo || allVideos.length === 0) return;
+        const currentIndex = allVideos.findIndex(v => v.id === selectedVideo.id);
+        const prevIndex = (currentIndex - 1 + allVideos.length) % allVideos.length;
+        setSelectedVideo(allVideos[prevIndex]);
+    };
+
+    // Keyboard navigation
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!selectedVideo) return;
+            if (e.key === "ArrowRight") goToNextVideo();
+            if (e.key === "ArrowLeft") goToPrevVideo();
+            if (e.key === "Escape") setSelectedVideo(null);
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [selectedVideo, allVideos]);
 
     const pushToast = (type: PremiumToastType, title: string, message: string) => {
         const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -881,15 +907,40 @@ export default function Dashboard() {
                                     <X className="w-5 h-5" />
                                 </button>
 
-                                {/* Contenedor Video Adaptativo */}
+                                {/* Contenedor Video Adaptativo con Transiciones */}
                                 <div className="relative flex-1 bg-black/40 flex items-center justify-center overflow-hidden min-h-[40vh]">
-                                    <div className="w-full h-full max-w-[min(100%,500px)] mx-auto p-4 sm:p-8">
-                                        <VideoPlayer 
-                                            publicId={selectedVideo.public_id}
-                                            controls={true}
-                                            branding={{ base: "#000", accent: "#d4af37" }}
-                                        />
-                                    </div>
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={selectedVideo.id}
+                                            initial={{ opacity: 0, x: 50, scale: 0.95 }}
+                                            animate={{ opacity: 1, x: 0, scale: 1 }}
+                                            exit={{ opacity: 0, x: -50, scale: 0.95 }}
+                                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                            className="w-full h-full max-w-[min(100%,500px)] mx-auto p-4 sm:p-8"
+                                        >
+                                            <VideoPlayer 
+                                                publicId={selectedVideo.public_id}
+                                                controls={true}
+                                                branding={{ base: "#000", accent: "#d4af37" }}
+                                            />
+                                        </motion.div>
+                                    </AnimatePresence>
+
+                                    {/* Controles de Navegación */}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); goToPrevVideo(); }}
+                                        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-4 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all backdrop-blur-md border border-white/5 group"
+                                        title="Anterior"
+                                    >
+                                        <ChevronLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); goToNextVideo(); }}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-4 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all backdrop-blur-md border border-white/5 group"
+                                        title="Siguiente"
+                                    >
+                                        <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                                    </button>
                                 </div>
 
                                 {/* Info Footer Elevado */}
