@@ -143,6 +143,7 @@ export default function Dashboard() {
     const [pendingDeleteMessageId, setPendingDeleteMessageId] = useState<string | null>(null);
     const [toasts, setToasts] = useState<PremiumToastItem[]>([]);
     const [videosHydrated, setVideosHydrated] = useState(false);
+    const [latestMemory, setLatestMemory] = useState<{ url: string, title: string } | null>(null);
 
     const pushToast = (type: PremiumToastType, title: string, message: string) => {
         const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -201,7 +202,21 @@ export default function Dashboard() {
             }
         };
         loadVideos();
-    }, [role]);
+    // Cargar la última memoria generada
+    useEffect(() => {
+        const loadLatestMemory = async () => {
+            const { data, error } = await supabase
+                .from('memories')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(1);
+            
+            if (data && data.length > 0 && !error) {
+                setLatestMemory(data[0]);
+            }
+        };
+        loadLatestMemory();
+    }, []);
 
     useEffect(() => {
         if (!videosHydrated) return;
@@ -463,11 +478,34 @@ export default function Dashboard() {
                                             <Sparkles className="relative w-12 h-12 text-b-gold mx-auto mb-2" />
                                         </div>
                                         <div>
-                                            <h2 className="text-4xl font-serif text-b-gold mb-2 italic">¡Felicidades, Reina {userName}!</h2>
-                                            <p className="text-gray-500 dark:text-gray-300 max-w-lg mx-auto text-sm leading-relaxed">
+                                            <h2 className="text-4xl font-serif text-b-gold mb-2 italic">¡Felicidades, Catherine!</h2>
+                                            <p className="text-gray-500 dark:text-gray-300 max-w-lg mx-auto text-sm leading-relaxed mb-8">
                                                 Hoy el mundo celebra tu vida. Hemos preparado una sección especial para que guardes los mejores momentos de este día.
                                             </p>
                                         </div>
+
+                                        {latestMemory && (
+                                            <motion.div 
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="max-w-3xl mx-auto space-y-4"
+                                            >
+                                                <div className="flex items-center justify-center gap-3 text-b-gold/60 text-[10px] font-black uppercase tracking-[0.3em]">
+                                                    <div className="h-[1px] w-8 bg-b-gold/30" />
+                                                    <span>Tu Video de Recuerdos</span>
+                                                    <div className="h-[1px] w-8 bg-b-gold/30" />
+                                                </div>
+                                                <div className="glass p-2 rounded-[2rem] border border-b-gold/20 shadow-2xl overflow-hidden aspect-video">
+                                                    <video 
+                                                        src={latestMemory.url} 
+                                                        controls 
+                                                        className="w-full h-full rounded-[1.5rem] object-cover"
+                                                        poster={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload/c_fill,w_800,h_450,so_0/${latestMemory.url.split('/').pop()?.split('.')[0]}.jpg`}
+                                                    />
+                                                </div>
+                                                <p className="text-[10px] text-gray-500 italic font-serif">"{latestMemory.title}"</p>
+                                            </motion.div>
+                                        )}
                                         
                                         <div className="pt-4">
                                             <button 
@@ -752,18 +790,34 @@ export default function Dashboard() {
                                         <Sparkles className="w-10 h-10" />
                                     </div>
                                     <div className="space-y-4">
-                                        <h2 className="text-4xl font-serif italic text-white">Generador de Memorias</h2>
+                                        <h2 className="text-4xl font-serif italic text-white">
+                                            {role === "admin" ? "Generador de Memorias" : "Tus Recuerdos Mágicos"}
+                                        </h2>
                                         <p className="text-gray-400 font-poppins text-sm leading-relaxed">
-                                            Selecciona tus momentos favoritos y deja que la IA cree un compilado mágico con música de fondo para ti.
+                                            {role === "admin" 
+                                                ? "Selecciona los mejores momentos y crea una película cinematográfica para Catherine." 
+                                                : "Disfruta de la compilación especial de momentos que hemos preparado para ti."}
                                         </p>
                                     </div>
-                                    <button 
-                                        onClick={() => router.push("/admin/memories")}
-                                        className="w-full h-16 bg-b-gold text-b-blue-950 rounded-2xl flex items-center justify-center gap-3 font-poppins font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 transition-all"
-                                    >
-                                        Abrir Generador de Highlights
-                                        <ChevronRight className="w-5 h-5" />
-                                    </button>
+                                    
+                                    {role === "admin" ? (
+                                        <button 
+                                            onClick={() => router.push("/admin/memories")}
+                                            className="w-full h-16 bg-b-gold text-b-blue-950 rounded-2xl flex items-center justify-center gap-3 font-poppins font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 transition-all"
+                                        >
+                                            Abrir Generador de Highlights
+                                            <ChevronRight className="w-5 h-5" />
+                                        </button>
+                                    ) : latestMemory ? (
+                                        <div className="space-y-6">
+                                            <div className="glass p-4 rounded-[2rem] border border-white/5 aspect-video overflow-hidden">
+                                                <video src={latestMemory.url} controls className="w-full h-full rounded-[1.5rem]" />
+                                            </div>
+                                            <p className="text-xs text-b-gold font-black uppercase tracking-widest">{latestMemory.title}</p>
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-gray-500 uppercase tracking-widest">Aún no hay memorias generadas. El admin las creará pronto.</p>
+                                    )}
                                 </div>
                             </motion.section>
                         ) : (

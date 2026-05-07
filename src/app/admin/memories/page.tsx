@@ -53,9 +53,9 @@ export default function MemoriesPage() {
         setTimeout(() => setToasts((prev) => prev.filter((item) => item.id !== id)), 4000);
     };
 
-    // Auth Guard
+    // Auth Guard - Only ADMIN can CREATE memories
     useEffect(() => {
-        if (role !== null && role !== "admin" && role !== "principal") {
+        if (role !== null && role !== "admin") {
             router.push("/");
         }
     }, [role, router]);
@@ -72,7 +72,6 @@ export default function MemoriesPage() {
 
                 if (error) throw error;
                 if (data) {
-                    // Normalizar campos (algunos pueden usar public_id o publicId)
                     setVideos(data.map(v => ({
                         ...v,
                         publicId: v.publicId || v.public_id
@@ -86,7 +85,7 @@ export default function MemoriesPage() {
             }
         };
 
-        if (role === "admin" || role === "principal") {
+        if (role === "admin") {
             fetchVideos();
         }
     }, [role]);
@@ -121,7 +120,18 @@ export default function MemoriesPage() {
             const data = await response.json();
             if (data.url) {
                 setGeneratedUrl(data.url);
-                pushToast("success", "¡Compilado Listo!", "Tu video de recuerdos ha sido generado.");
+                
+                // GUARDAR EN SUPABASE PARA QUE CATHERINE LO VEA
+                const { error: dbError } = await supabase
+                    .from('memories')
+                    .insert([{ 
+                        url: data.url,
+                        title: `Recuerdos de Catherine - ${new Date().toLocaleDateString()}`
+                    }]);
+
+                if (dbError) throw dbError;
+
+                pushToast("success", "¡Compilado Listo!", "Tu video de recuerdos ha sido generado y publicado para Catherine.");
             } else {
                 throw new Error(data.error || "Error desconocido");
             }
