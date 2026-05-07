@@ -76,7 +76,9 @@ export default function Dashboard() {
                     }
                 };
 
-                audio.play().catch(() => console.log("Autoplay bloqueado, esperando interacción."));
+                if (isAnyVideoPlaying) {
+                    audio.play().catch(() => console.log("Autoplay bloqueado, esperando interacción."));
+                }
             };
 
             playTrack(trackIndexRef.current);
@@ -90,13 +92,15 @@ export default function Dashboard() {
         };
     }, [baseVolume]);
 
-    // Atenuación inteligente cuando hay video sonando
+    // Música de acompañamiento: Solo se activa cuando hay un video sonando
     useEffect(() => {
         if (audioRef.current) {
-            if (isMuted) {
+            if (isMuted || !isAnyVideoPlaying) {
                 audioRef.current.volume = 0;
             } else {
-                audioRef.current.volume = isAnyVideoPlaying ? Math.max(0.005, baseVolume * 0.12) : baseVolume;
+                // Cuando hay video, activamos el fondo a volumen muy bajo (ambiente)
+                audioRef.current.volume = Math.min(0.02, baseVolume * 0.15);
+                audioRef.current.play().catch(() => {});
             }
         }
     }, [isAnyVideoPlaying, isMuted, baseVolume]);
@@ -154,7 +158,7 @@ export default function Dashboard() {
         const loadData = async () => {
             if (!role) return;
 
-            const messagesQuery = role === "admin"
+            const messagesQuery = (role === "admin" || role === "principal")
                 ? supabase.from('messages').select('*')
                 : supabase.from('messages').select('*').eq('guest_id', guestId || '');
 
@@ -199,7 +203,7 @@ export default function Dashboard() {
     }, [videos, videosHydrated]);
 
     const mensajesVisibles = mensajes;
-    const videosVisibles = role === "admin"
+    const videosVisibles = (role === "admin" || role === "principal")
         ? videos
         : videos.filter((video) => {
             if (!guestId) return false;
@@ -453,7 +457,7 @@ export default function Dashboard() {
                                 )}
 
                                 {/* SECCIÓN DE ENVÍO DE MENSAJES (No flotante) */}
-                                {(role === "user" || role === "admin") && (
+                                {(role === "user" || role === "admin" || role === "principal") && (
                                     <div className="max-w-4xl mx-auto px-2 sm:px-0">
                                         <div className="glass p-6 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl md:rounded-[3.5rem] border border-b-gold/20 shadow-2xl relative overflow-hidden">
                                             <div className="flex flex-col gap-4 sm:gap-6 md:gap-8">
@@ -624,7 +628,7 @@ export default function Dashboard() {
                                 className="space-y-8 sm:space-y-12"
                             >
                                 {/* WIDGET DE SUBIDA MEJORADO */}
-                                {(role === "user" || role === "admin") && (
+                                {(role === "user" || role === "admin" || role === "principal") && (
                                     <div className="flex justify-center mb-10 sm:mb-16">
                                         <VideoUpload
                                             userName={userName || "Invitado"}

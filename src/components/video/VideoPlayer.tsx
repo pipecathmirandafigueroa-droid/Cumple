@@ -33,6 +33,7 @@ export default function VideoPlayer({
     const [showControls, setShowControls] = useState(false);
     const [isTouchUi, setIsTouchUi] = useState(false);
     const playerRef = useRef<any>(null);
+    const [dimensions, setDimensions] = useState({ width: 1920, height: 1080 });
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -75,6 +76,7 @@ export default function VideoPlayer({
     return (
         <div
             className="relative group rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden shadow-xl sm:shadow-2xl border border-b-gold/20 glass"
+            style={{ aspectRatio: `${dimensions.width} / ${dimensions.height}` }}
             onMouseEnter={() => setShowControls(true)}
             onMouseLeave={() => setShowControls(false)}
             onClick={() => {
@@ -82,13 +84,13 @@ export default function VideoPlayer({
             }}
         >
             {!publicId && (
-                <div className="aspect-video w-full flex items-center justify-center bg-black/30 text-b-gold/80 text-xs font-poppins uppercase tracking-[0.2em]">
+                <div className="w-full h-full flex items-center justify-center bg-black/30 text-b-gold/80 text-xs font-poppins uppercase tracking-[0.2em] min-h-[200px]">
                     Video sin ID valido
                 </div>
             )}
             <CldVideoPlayer
-                width="1920"
-                height="1080"
+                width={dimensions.width.toString()}
+                height={dimensions.height.toString()}
                 src={publicId}
                 colors={{
                     accent: branding.accent,
@@ -100,6 +102,21 @@ export default function VideoPlayer({
                 onDataLoad={(event: { player: any }) => {
                     const { player } = event;
                     playerRef.current = player;
+                    
+                    // Intentar leer dimensiones inmediatamente si están disponibles
+                    const w = player.videoWidth();
+                    const h = player.videoHeight();
+                    if (w && h && (w !== dimensions.width || h !== dimensions.height)) {
+                        setDimensions({ width: w, height: h });
+                    }
+                }}
+                onMetadataLoad={(event: { player: any }) => {
+                    const { player } = event;
+                    const w = player.videoWidth();
+                    const h = player.videoHeight();
+                    if (w && h && (w !== dimensions.width || h !== dimensions.height)) {
+                        setDimensions({ width: w, height: h });
+                    }
                 }}
                 onPlay={() => {
                     setIsPlaying(true);
@@ -111,7 +128,7 @@ export default function VideoPlayer({
                     setIsAnyVideoPlaying(false);
                     onPlayStateChange?.(false);
                 }}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
             />
 
             {/* INTERFAZ "MODO CINE" PERSONALIZADA */}

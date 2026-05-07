@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         try {
-            const raw = sessionStorage.getItem(GUEST_SESSION_KEY);
+            const raw = localStorage.getItem(GUEST_SESSION_KEY);
             if (!raw) return;
             const parsed = JSON.parse(raw) as { role: Role; userName: string; guestId: string };
             if (parsed?.role && parsed?.userName && parsed?.guestId) {
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setGuestId(parsed.guestId);
             }
         } catch {
-            sessionStorage.removeItem(GUEST_SESSION_KEY);
+            localStorage.removeItem(GUEST_SESSION_KEY);
         }
     }, []);
 
@@ -69,6 +69,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setGuestId(data.id);
                 setIsGlobalPaused(false);
                 setIsAnyVideoPlaying(false);
+
+                // Persistir sesión de código también para evitar re-logueo
+                localStorage.setItem(
+                    GUEST_SESSION_KEY,
+                    JSON.stringify({ role: data.role, userName: data.name, guestId: data.id })
+                );
+
                 return true;
             }
         } catch (err) {
@@ -81,16 +88,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const normalizedName = fullName.trim();
         if (!normalizedName) return false;
 
-        const generatedId = crypto.randomUUID();
+        // Intentar recuperar el guestId si ya ha publicado algo anteriormente con este nombre
+        // Esto permite que si entran desde otro navegador o borran caché, recuperen sus posts por el nombre
+        const { data: existingMessages } = await supabase
+            .from('messages')
+            .select('guest_id')
+            .ilike('autor', normalizedName)
+            .limit(1);
+
+        const guestIdToUse = existingMessages?.[0]?.guest_id || crypto.randomUUID();
+
         setRole("user");
         setUserName(normalizedName);
-        setGuestId(generatedId);
+        setGuestId(guestIdToUse);
         setIsGlobalPaused(false);
         setIsAnyVideoPlaying(false);
 
-        sessionStorage.setItem(
+        localStorage.setItem(
             GUEST_SESSION_KEY,
-            JSON.stringify({ role: "user", userName: normalizedName, guestId: generatedId })
+            JSON.stringify({ role: "user", userName: normalizedName, guestId: guestIdToUse })
         );
 
         return true;
@@ -102,7 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setGuestId(null);
         setIsGlobalPaused(true);
         setIsAnyVideoPlaying(false);
-        sessionStorage.removeItem(GUEST_SESSION_KEY);
+        localStorage.removeItem(GUEST_SESSION_KEY);
     };
 
     const setGlobalPause = (paused: boolean) => {
