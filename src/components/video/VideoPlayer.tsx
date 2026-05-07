@@ -33,7 +33,8 @@ export default function VideoPlayer({
     const [showControls, setShowControls] = useState(false);
     const [isTouchUi, setIsTouchUi] = useState(false);
     const playerRef = useRef<any>(null);
-    const [dimensions, setDimensions] = useState({ width: 1920, height: 1080 });
+    const [dimensions, setDimensions] = useState({ width: 1080, height: 1080 }); // Default neutral square
+    const [isDimensionsLoaded, setIsDimensionsLoaded] = useState(false);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -47,6 +48,15 @@ export default function VideoPlayer({
             playerRef.current.pause();
         }
     }, [isGlobalPaused, isPlaying]);
+
+    const updateDimensions = (player: any) => {
+        const w = player.videoWidth();
+        const h = player.videoHeight();
+        if (w && h) {
+            setDimensions({ width: w, height: h });
+            setIsDimensionsLoaded(true);
+        }
+    };
 
     const handlePlayPause = () => {
         if (playerRef.current) {
@@ -75,8 +85,11 @@ export default function VideoPlayer({
 
     return (
         <div
-            className="relative group rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden shadow-xl sm:shadow-2xl border border-b-gold/20 glass"
-            style={{ aspectRatio: `${dimensions.width} / ${dimensions.height}` }}
+            className={`relative group rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden shadow-xl sm:shadow-2xl border border-b-gold/20 glass transition-all duration-500 ${!isDimensionsLoaded ? 'opacity-0' : 'opacity-1'}`}
+            style={{ 
+                aspectRatio: `${dimensions.width} / ${dimensions.height}`,
+                maxHeight: dimensions.height > dimensions.width ? '70vh' : 'auto' // Prevent vertical videos from being too tall
+            }}
             onMouseEnter={() => setShowControls(true)}
             onMouseLeave={() => setShowControls(false)}
             onClick={() => {
@@ -100,28 +113,18 @@ export default function VideoPlayer({
                 fontFace="Playfair Display"
                 autoplay={autoPlay}
                 onDataLoad={(event: { player: any }) => {
-                    const { player } = event;
-                    playerRef.current = player;
-                    
-                    // Intentar leer dimensiones inmediatamente si están disponibles
-                    const w = player.videoWidth();
-                    const h = player.videoHeight();
-                    if (w && h && (w !== dimensions.width || h !== dimensions.height)) {
-                        setDimensions({ width: w, height: h });
-                    }
+                    playerRef.current = event.player;
+                    updateDimensions(event.player);
                 }}
                 onMetadataLoad={(event: { player: any }) => {
-                    const { player } = event;
-                    const w = player.videoWidth();
-                    const h = player.videoHeight();
-                    if (w && h && (w !== dimensions.width || h !== dimensions.height)) {
-                        setDimensions({ width: w, height: h });
-                    }
+                    updateDimensions(event.player);
                 }}
                 onPlay={() => {
                     setIsPlaying(true);
                     setIsAnyVideoPlaying(true);
                     onPlayStateChange?.(true);
+                    // Doble check de dimensiones al dar play por si acaso
+                    if (playerRef.current) updateDimensions(playerRef.current);
                 }}
                 onPause={() => {
                     setIsPlaying(false);
