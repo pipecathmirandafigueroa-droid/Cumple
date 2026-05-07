@@ -39,7 +39,6 @@ const ROMANTIC_BDAY_TRACKS = [
 const TAB_META = {
     mensajes: { label: "Mensajes", icon: MessageSquare },
     videos: { label: "Videos", icon: Clapperboard },
-    memorias: { label: "Memorias", icon: Sparkles },
     admin: { label: "Admin", icon: Shield },
 } as const;
 
@@ -47,7 +46,7 @@ export default function Dashboard() {
     const { role, userName, guestId, logout, setGlobalPause, isAnyVideoPlaying } = useAuth();
     const router = useRouter();
     const shouldReduceMotion = useReducedMotion();
-    const [activeTab, setActiveTab] = useState<"mensajes" | "videos" | "memorias" | "admin">("mensajes");
+    const [activeTab, setActiveTab] = useState<"mensajes" | "videos" | "admin">("mensajes");
     const [isMuted, setIsMuted] = useState(false);
     const [baseVolume, setBaseVolume] = useState(0.12);
     const [isCompactTabs, setIsCompactTabs] = useState(false);
@@ -144,6 +143,8 @@ export default function Dashboard() {
     const [toasts, setToasts] = useState<PremiumToastItem[]>([]);
     const [videosHydrated, setVideosHydrated] = useState(false);
     const [latestMemory, setLatestMemory] = useState<{ url: string, title: string } | null>(null);
+    const [allVideos, setAllVideos] = useState<Video[]>([]);
+    const [isLoadingGallery, setIsLoadingGallery] = useState(true);
 
     const pushToast = (type: PremiumToastType, title: string, message: string) => {
         const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -204,20 +205,40 @@ export default function Dashboard() {
         loadVideos();
     }, [role]);
 
-    // Cargar la última memoria generada
+    // Fetch ALL videos for Infinite Gallery
     useEffect(() => {
-        const loadLatestMemory = async () => {
+        const fetchAllVideos = async () => {
+            setIsLoadingGallery(true);
+            try {
+                const { data, error } = await supabase
+                    .from('videos')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (data) setAllVideos(data);
+            } catch (err) {
+                console.error("Error fetching gallery:", err);
+            } finally {
+                setIsLoadingGallery(false);
+            }
+        };
+        fetchAllVideos();
+    }, []);
+
+    // Fetch Latest Memory for internal use (if still needed, but UI will hide it)
+    useEffect(() => {
+        const fetchLatestMemory = async () => {
             const { data, error } = await supabase
                 .from('memories')
                 .select('*')
                 .order('created_at', { ascending: false })
                 .limit(1);
             
-            if (data && data.length > 0 && !error) {
+            if (data && data[0]) {
                 setLatestMemory(data[0]);
             }
         };
-        loadLatestMemory();
+        fetchLatestMemory();
     }, []);
 
     useEffect(() => {
@@ -442,9 +463,8 @@ export default function Dashboard() {
                 {/* NAVEGACIÓN POR PESTAÑAS (TABS) LUXURY - iOS Style */}
                 <div className="max-w-2xl mx-auto mb-12 lg:mb-24 px-2 sm:px-4 md:px-0">
                     <div className="p-1.5 glass rounded-2xl sm:rounded-3xl flex border border-b-gold/10 shadow-xl sm:shadow-2xl gap-1 sm:gap-1.5">
-                        {(['mensajes', 'videos', 'memorias', 'admin'] as const).filter(t => {
+                        {(['mensajes', 'videos', 'admin'] as const).filter(t => {
                             if (t === 'admin') return role === 'admin';
-                            if (t === 'memorias') return role === 'admin' || role === 'principal';
                             return true;
                         }).map((tab) => {
                             const Icon = TAB_META[tab].icon;
@@ -496,28 +516,55 @@ export default function Dashboard() {
                                             </p>
                                         </div>
 
-                                        {latestMemory && (
-                                            <motion.div 
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                className="max-w-3xl mx-auto space-y-4"
-                                            >
-                                                <div className="flex items-center justify-center gap-3 text-b-gold/60 text-[10px] font-black uppercase tracking-[0.3em]">
-                                                    <div className="h-[1px] w-8 bg-b-gold/30" />
-                                                    <span>Tu Video de Recuerdos</span>
-                                                    <div className="h-[1px] w-8 bg-b-gold/30" />
+                                        {/* GALERÍA INFINITA EN VEZ DE VIDEO ÚNICO */}
+                                        <div className="w-full space-y-8">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className="h-[1px] w-24 bg-b-gold/30" />
+                                                <span className="text-b-gold font-poppins font-black tracking-[0.4em] text-[10px] uppercase">Galería de Momentos</span>
+                                                <div className="h-[1px] w-24 bg-b-gold/30" />
+                                            </div>
+
+                                            {isLoadingGallery ? (
+                                                <div className="flex justify-center py-20">
+                                                    <Sparkles className="w-8 h-8 text-b-gold animate-spin" />
                                                 </div>
-                                                <div className="glass p-2 rounded-[2rem] border border-b-gold/20 shadow-2xl overflow-hidden aspect-video">
-                                                    <video 
-                                                        src={latestMemory.url} 
-                                                        controls 
-                                                        className="w-full h-full rounded-[1.5rem] object-cover"
-                                                        poster={latestMemory.url.replace(".mp4", ".jpg")}
-                                                    />
+                                            ) : (
+                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                                                    {allVideos.map((vid, idx) => (
+                                                        <motion.div
+                                                            key={vid.id}
+                                                            initial={{ opacity: 0, y: 20 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ delay: idx * 0.05 }}
+                                                            className="group relative aspect-[9/16] rounded-3xl overflow-hidden glass border border-white/5 shadow-2xl cursor-pointer"
+                                                        >
+                                                            <img 
+                                                                src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload/c_fill,w_400,h_711,so_1/${vid.publicId}.jpg`}
+                                                                alt={vid.titulo}
+                                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                            />
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
+                                                                <p className="text-[10px] font-black text-b-gold uppercase tracking-widest mb-1">{vid.autor}</p>
+                                                                <p className="text-xs font-serif italic text-white line-clamp-1">{vid.titulo}</p>
+                                                            </div>
+                                                            {/* Play Icon Overlay */}
+                                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all scale-150 group-hover:scale-100">
+                                                                <div className="w-12 h-12 rounded-full bg-b-gold/20 backdrop-blur-md flex items-center justify-center border border-b-gold/50">
+                                                                    <Play className="w-5 h-5 text-b-gold fill-b-gold" />
+                                                                </div>
+                                                            </div>
+                                                        </motion.div>
+                                                    ))}
                                                 </div>
-                                                <p className="text-[10px] text-gray-500 italic font-serif">"{latestMemory.title}"</p>
-                                            </motion.div>
-                                        )}
+                                            )}
+                                            
+                                            {allVideos.length === 0 && !isLoadingGallery && (
+                                                <div className="py-20 text-center space-y-4">
+                                                    <Film className="w-12 h-12 text-white/10 mx-auto" />
+                                                    <p className="text-xs text-gray-500 uppercase tracking-widest">Esperando el primer video del día...</p>
+                                                </div>
+                                            )}
+                                        </div>
                                         
                                         <div className="pt-4">
                                             <button 
@@ -788,49 +835,6 @@ export default function Dashboard() {
                                         </p>
                                     </div>
                                 )}
-                            </motion.section>
-                        ) : activeTab === "memorias" ? (
-                            <motion.section
-                                key="memorias"
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className="min-h-[60vh] flex flex-col items-center justify-center"
-                            >
-                                <div className="glass p-12 rounded-[3.5rem] border border-b-gold/20 text-center max-w-2xl space-y-8">
-                                    <div className="w-20 h-20 bg-b-gold/20 rounded-3xl flex items-center justify-center text-b-gold mx-auto">
-                                        <Sparkles className="w-10 h-10" />
-                                    </div>
-                                    <div className="space-y-4">
-                                        <h2 className="text-4xl font-serif italic text-white">
-                                            {role === "admin" ? "Generador de Memorias" : "Tus Recuerdos Mágicos"}
-                                        </h2>
-                                        <p className="text-gray-400 font-poppins text-sm leading-relaxed">
-                                            {role === "admin" 
-                                                ? "Selecciona los mejores momentos y crea una película cinematográfica para Catherine." 
-                                                : "Disfruta de la compilación especial de momentos que hemos preparado para ti."}
-                                        </p>
-                                    </div>
-                                    
-                                    {role === "admin" ? (
-                                        <button 
-                                            onClick={() => router.push("/admin/memories")}
-                                            className="w-full h-16 bg-b-gold text-b-blue-950 rounded-2xl flex items-center justify-center gap-3 font-poppins font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 transition-all"
-                                        >
-                                            Abrir Generador de Highlights
-                                            <ChevronRight className="w-5 h-5" />
-                                        </button>
-                                    ) : latestMemory ? (
-                                        <div className="space-y-6">
-                                            <div className="glass p-4 rounded-[2rem] border border-white/5 aspect-video overflow-hidden">
-                                                <video src={latestMemory.url} controls className="w-full h-full rounded-[1.5rem]" />
-                                            </div>
-                                            <p className="text-xs text-b-gold font-black uppercase tracking-widest">{latestMemory.title}</p>
-                                        </div>
-                                    ) : (
-                                        <p className="text-xs text-gray-500 uppercase tracking-widest">Aún no hay memorias generadas. El admin las creará pronto.</p>
-                                    )}
-                                </div>
                             </motion.section>
                         ) : (
                             <motion.section
