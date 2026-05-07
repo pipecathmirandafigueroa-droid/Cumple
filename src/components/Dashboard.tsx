@@ -7,7 +7,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import AdminPanel from "@/components/AdminPanel";
 import PremiumToast, { PremiumToastItem, PremiumToastType } from "@/components/PremiumToast";
 import { supabase } from "@/lib/supabase";
-import { Send, Lock, User, MessageSquare, Heart, LogOut, Shield, Edit2, Save, X, Clapperboard, Trash2, Volume2, VolumeX, Sparkles, ChevronRight } from "lucide-react";
+import { Send, Lock, User, MessageSquare, Heart, LogOut, Shield, Edit2, Save, X, Clapperboard, Trash2, Volume2, VolumeX, Sparkles, ChevronRight, Play, Film } from "lucide-react";
 import { useRouter } from "next/navigation";
 import VideoUpload from "@/components/VideoUpload";
 import { useEffect, useRef } from "react";
@@ -127,8 +127,8 @@ export default function Dashboard() {
         return () => window.removeEventListener("resize", syncCompactTabs);
     }, []);
 
-    const handleTabChange = (tab: "mensajes" | "videos" | "memorias" | "admin") => {
-        setGlobalPause(tab !== "videos" && tab !== "memorias");
+    const handleTabChange = (tab: "mensajes" | "videos" | "admin") => {
+        setGlobalPause(tab !== "videos");
         setActiveTab(tab);
     };
 
@@ -568,10 +568,10 @@ export default function Dashboard() {
                                         
                                         <div className="pt-4">
                                             <button 
-                                                onClick={() => handleTabChange("memorias")}
+                                                onClick={() => handleTabChange("videos")}
                                                 className="px-8 py-4 bg-b-gold text-b-blue-950 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 mx-auto"
                                             >
-                                                Ver Mis Memorias
+                                                Ver Todos los Videos
                                                 <ChevronRight className="w-4 h-4" />
                                             </button>
                                         </div>
