@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import VideoCard from "@/components/VideoCard";
+import VideoPlayer from "@/components/video/VideoPlayer";
 import ThemeToggle from "@/components/ThemeToggle";
 import AdminPanel from "@/components/AdminPanel";
 import PremiumToast, { PremiumToastItem, PremiumToastType } from "@/components/PremiumToast";
@@ -145,6 +146,7 @@ export default function Dashboard() {
     const [latestMemory, setLatestMemory] = useState<{ url: string, title: string } | null>(null);
     const [allVideos, setAllVideos] = useState<Video[]>([]);
     const [isLoadingGallery, setIsLoadingGallery] = useState(true);
+    const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
 
     const pushToast = (type: PremiumToastType, title: string, message: string) => {
         const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -536,7 +538,8 @@ export default function Dashboard() {
                                                             initial={{ opacity: 0, y: 20 }}
                                                             animate={{ opacity: 1, y: 0 }}
                                                             transition={{ delay: idx * 0.03 }}
-                                                            className="group relative aspect-[3/4] rounded-2xl overflow-hidden glass border border-white/5 shadow-lg cursor-pointer"
+                                                            onClick={() => setSelectedVideo(vid)}
+                                                            className="group relative aspect-[3/4] rounded-2xl overflow-hidden glass border border-white/5 shadow-lg cursor-pointer active:scale-95 transition-transform"
                                                         >
                                                             <img 
                                                                 src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload/c_fill,w_300,h_400,so_1/${vid.public_id}.jpg`}
@@ -849,6 +852,58 @@ export default function Dashboard() {
                     </AnimatePresence>
                 </main>
 
+                {/* MODAL DE VIDEO (LIGHTBOX) CINEMATOGRÁFICO */}
+                <AnimatePresence>
+                    {selectedVideo && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8"
+                        >
+                            {/* Backdrop */}
+                            <div 
+                                className="absolute inset-0 bg-black/90 backdrop-blur-xl cursor-pointer"
+                                onClick={() => setSelectedVideo(null)}
+                            />
+                            
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                className="relative w-full max-w-4xl aspect-video sm:aspect-auto sm:max-h-[85vh] glass rounded-[2rem] sm:rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col"
+                            >
+                                {/* Botón Cerrar */}
+                                <button
+                                    onClick={() => setSelectedVideo(null)}
+                                    className="absolute top-6 right-6 z-20 p-3 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors border border-white/10"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+
+                                {/* Contenedor Video */}
+                                <div className="flex-1 bg-black flex items-center justify-center overflow-hidden">
+                                    <div className="w-full h-full max-w-lg aspect-[9/16] py-8">
+                                        <VideoPlayer 
+                                            publicId={selectedVideo.public_id}
+                                            controls={true}
+                                            branding={{ base: "#000", accent: "#d4af37" }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Info Footer */}
+                                <div className="p-6 sm:p-10 bg-gradient-to-t from-black/80 to-transparent border-t border-white/5 space-y-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-[1px] bg-b-gold" />
+                                        <span className="text-[10px] font-black text-b-gold uppercase tracking-[0.5em]">{selectedVideo.autor}</span>
+                                    </div>
+                                    <h2 className="text-2xl sm:text-4xl font-serif italic text-white">{selectedVideo.titulo}</h2>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );
