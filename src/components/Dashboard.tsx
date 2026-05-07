@@ -409,7 +409,7 @@ export default function Dashboard() {
                 {/* NAVEGACIÓN POR PESTAÑAS (TABS) LUXURY - iOS Style */}
                 <div className="max-w-2xl mx-auto mb-12 lg:mb-24 px-2 sm:px-4 md:px-0">
                     <div className="p-1.5 glass rounded-2xl sm:rounded-3xl flex border border-b-gold/10 shadow-xl sm:shadow-2xl gap-1 sm:gap-1.5">
-                        {(['mensajes', 'videos', 'admin'] as const).filter(t => t !== 'admin' || role === 'admin').map((tab) => {
+                        {(['mensajes', 'videos', 'admin'] as const).filter(t => t !== 'admin' || role === 'admin' || role === 'principal').map((tab) => {
                             const Icon = TAB_META[tab].icon;
                             const label = TAB_META[tab].label;
 

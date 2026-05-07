@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserPlus, Trash2, Edit2, Shield, User, Star, Save, X, RefreshCw, Upload, Download } from "lucide-react";
+import { UserPlus, Trash2, Edit2, Shield, User, Star, Save, X, RefreshCw, Upload, Download, ChevronRight } from "lucide-react";
 import PremiumToast, { PremiumToastItem, PremiumToastType } from "@/components/PremiumToast";
 import * as XLSX from "xlsx";
 
@@ -226,6 +226,31 @@ export default function AdminPanel() {
     return (
         <div className="space-y-12">
             <PremiumToast toasts={toasts} onClose={removeToast} />
+
+            {/* SECCIÓN DE ACCESO RÁPIDO A MEMORIAS */}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="glass p-8 rounded-[3rem] border border-b-gold/20 flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-r from-b-gold/10 to-transparent"
+            >
+                <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 bg-b-gold rounded-3xl flex items-center justify-center text-b-blue-950 shadow-xl">
+                        <Star className="w-8 h-8" />
+                    </div>
+                    <div>
+                        <h2 className="text-3xl font-serif italic">Video Highlights</h2>
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-b-gold/60">Crea compilados mágicos de recuerdos</p>
+                    </div>
+                </div>
+                <a
+                    href="/admin/memories"
+                    className="w-full md:w-auto px-10 py-4 bg-b-gold text-b-blue-950 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
+                >
+                    IR A GENERADOR
+                    <ChevronRight className="w-4 h-4" />
+                </a>
+            </motion.div>
+
             {/* FORMULARIO DE GESTIÓN */}
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
