@@ -8,7 +8,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import AdminPanel from "@/components/AdminPanel";
 import PremiumToast, { PremiumToastItem, PremiumToastType } from "@/components/PremiumToast";
 import { supabase } from "@/lib/supabase";
-import { Send, Lock, User, MessageSquare, Heart, LogOut, Shield, Edit2, Save, X, Clapperboard, Trash2, Volume2, VolumeX, Sparkles, ChevronLeft, ChevronRight, Play, Film } from "lucide-react";
+import { Send, Lock, User, MessageSquare, Heart, LogOut, Shield, Edit2, Save, X, Clapperboard, Trash2, Volume2, VolumeX, Sparkles, ChevronLeft, ChevronRight, Play, Film, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import VideoUpload from "@/components/VideoUpload";
 import { useEffect, useRef } from "react";
@@ -147,6 +147,27 @@ export default function Dashboard() {
     const [allVideos, setAllVideos] = useState<Video[]>([]);
     const [isLoadingGallery, setIsLoadingGallery] = useState(true);
     const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+    // PWA Install Logic
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e: any) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    }, []);
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            setDeferredPrompt(null);
+            pushToast("success", "¡Instalación Iniciada!", "La aplicación se está instalando en tu dispositivo.");
+        }
+    };
 
     const goToNextVideo = () => {
         if (!selectedVideo || allVideos.length === 0) return;
@@ -427,6 +448,15 @@ export default function Dashboard() {
                     </span>
                 </div>
                 <ThemeToggle />
+                {deferredPrompt && (
+                    <button 
+                        onClick={handleInstallClick}
+                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-full bg-b-gold text-b-blue-950 font-black text-[10px] uppercase tracking-widest shadow-[0_8px_20px_rgba(212,175,55,0.4)] hover:scale-105 active:scale-95 transition-all"
+                    >
+                        <Download className="w-4 h-4" />
+                        Instalar App
+                    </button>
+                )}
                 <motion.button
                     whileHover={shouldReduceMotion ? undefined : { scale: 1.06 }}
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
@@ -487,6 +517,19 @@ export default function Dashboard() {
                 </header>
 
 
+
+                {/* BOTÓN INSTALAR MÓVIL */}
+                {deferredPrompt && (
+                    <div className="max-w-2xl mx-auto mb-6 px-4 sm:hidden">
+                        <button 
+                            onClick={handleInstallClick}
+                            className="w-full py-4 glass rounded-2xl border border-b-gold/20 flex items-center justify-center gap-3 text-b-gold font-black text-[10px] uppercase tracking-[0.3em] shadow-xl active:scale-95 transition-all animate-pulse"
+                        >
+                            <Download className="w-4 h-4" />
+                            Instalar Birthday Hub en Android
+                        </button>
+                    </div>
+                )}
 
                 {/* NAVEGACIÓN POR PESTAÑAS (TABS) LUXURY - iOS Style */}
                 <div className="max-w-2xl mx-auto mb-12 lg:mb-24 px-2 sm:px-4 md:px-0">
