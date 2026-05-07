@@ -202,6 +202,8 @@ export default function Dashboard() {
             }
         };
         loadVideos();
+    }, [role]);
+
     // Cargar la última memoria generada
     useEffect(() => {
         const loadLatestMemory = async () => {
