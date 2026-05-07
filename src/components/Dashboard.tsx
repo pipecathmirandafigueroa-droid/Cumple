@@ -24,10 +24,10 @@ interface Message {
 
 interface Video {
     id: string;
-    publicId: string;
+    public_id: string;
     autor: string;
     titulo: string;
-    ownerId?: string;
+    owner_id?: string;
     created_at?: string;
 }
 
@@ -251,7 +251,7 @@ export default function Dashboard() {
         ? videos
         : videos.filter((video) => {
             if (!guestId) return false;
-            if (video.ownerId) return video.ownerId === guestId;
+            if (video.owner_id) return video.owner_id === guestId;
             return video.autor === (userName || "Invitado");
         });
 
@@ -325,7 +325,7 @@ export default function Dashboard() {
     const canDeleteVideo = (video: Video) => {
         if (role === "admin") return true;
         if (!guestId) return false;
-        if (video.ownerId) return video.ownerId === guestId;
+        if (video.owner_id) return video.owner_id === guestId;
         return video.autor === (userName || "Invitado");
     };
 
@@ -529,28 +529,28 @@ export default function Dashboard() {
                                                     <Sparkles className="w-8 h-8 text-b-gold animate-spin" />
                                                 </div>
                                             ) : (
-                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
                                                     {allVideos.map((vid, idx) => (
                                                         <motion.div
                                                             key={vid.id}
                                                             initial={{ opacity: 0, y: 20 }}
                                                             animate={{ opacity: 1, y: 0 }}
-                                                            transition={{ delay: idx * 0.05 }}
-                                                            className="group relative aspect-[9/16] rounded-3xl overflow-hidden glass border border-white/5 shadow-2xl cursor-pointer"
+                                                            transition={{ delay: idx * 0.03 }}
+                                                            className="group relative aspect-[3/4] rounded-2xl overflow-hidden glass border border-white/5 shadow-lg cursor-pointer"
                                                         >
                                                             <img 
-                                                                src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload/c_fill,w_400,h_711,so_1/${vid.publicId}.jpg`}
+                                                                src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload/c_fill,w_300,h_400,so_1/${vid.public_id}.jpg`}
                                                                 alt={vid.titulo}
                                                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                                             />
-                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
-                                                                <p className="text-[10px] font-black text-b-gold uppercase tracking-widest mb-1">{vid.autor}</p>
-                                                                <p className="text-xs font-serif italic text-white line-clamp-1">{vid.titulo}</p>
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end">
+                                                                <p className="text-[8px] font-black text-b-gold uppercase tracking-widest mb-0.5">{vid.autor}</p>
+                                                                <p className="text-[10px] font-serif italic text-white line-clamp-1">{vid.titulo}</p>
                                                             </div>
-                                                            {/* Play Icon Overlay */}
-                                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all scale-150 group-hover:scale-100">
-                                                                <div className="w-12 h-12 rounded-full bg-b-gold/20 backdrop-blur-md flex items-center justify-center border border-b-gold/50">
-                                                                    <Play className="w-5 h-5 text-b-gold fill-b-gold" />
+                                                            {/* Play Icon Overlay Small */}
+                                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                                                                <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+                                                                    <Play className="w-4 h-4 text-white fill-white" />
                                                                 </div>
                                                             </div>
                                                         </motion.div>
@@ -790,25 +790,25 @@ export default function Dashboard() {
 
                                                 const newVideo: Video = {
                                                     id: data.id,
-                                                    publicId: data.public_id || data.publicId,
+                                                    public_id: data.public_id,
                                                     autor: data.autor,
                                                     titulo: data.titulo,
-                                                    ownerId: data.owner_id || data.ownerId,
+                                                    owner_id: data.owner_id,
                                                     created_at: data.created_at,
                                                 };
 
-                                                setVideos((prev) => [newVideo, ...prev.filter((v) => v.publicId !== publicId)]);
+                                                setVideos((prev) => [newVideo, ...prev.filter((v) => v.public_id !== publicId)]);
                                                 pushToast("success", "Video agregado", "El video se subió y registró correctamente.");
                                             }}
                                         />
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12 px-2 sm:px-0">
+                                <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-12 px-1 sm:px-0">
                                     {videosVisibles.map((video) => (
-                                        <div key={video.id} className="space-y-3">
+                                        <div key={video.id} className="space-y-2 sm:space-y-3">
                                             <VideoCard
-                                                publicId={video.publicId}
+                                                publicId={video.public_id}
                                                 autor={video.autor}
                                                 titulo={video.titulo}
                                             />
