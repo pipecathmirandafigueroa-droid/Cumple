@@ -49,7 +49,18 @@ export default function VideoPlayer({
         }
     }, [isGlobalPaused, isPlaying]);
 
+    // Fallback de seguridad: si en 2 segundos no detectamos dimensiones, mostramos igual
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (!isDimensionsLoaded) {
+                setIsDimensionsLoaded(true);
+            }
+        }, 2000);
+        return () => clearTimeout(timer);
+    }, [isDimensionsLoaded]);
+
     const updateDimensions = (player: any) => {
+        if (!player) return;
         const w = player.videoWidth();
         const h = player.videoHeight();
         if (w && h) {
@@ -85,10 +96,10 @@ export default function VideoPlayer({
 
     return (
         <div
-            className={`relative group rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden shadow-xl sm:shadow-2xl border border-b-gold/20 glass transition-all duration-500 ${!isDimensionsLoaded ? 'opacity-0' : 'opacity-1'}`}
+            className={`relative group rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden shadow-xl sm:shadow-2xl border border-b-gold/20 glass transition-all duration-700 ${!isDimensionsLoaded ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
             style={{ 
                 aspectRatio: `${dimensions.width} / ${dimensions.height}`,
-                maxHeight: dimensions.height > dimensions.width ? '70vh' : 'auto' // Prevent vertical videos from being too tall
+                maxHeight: dimensions.height > dimensions.width ? '70vh' : 'auto'
             }}
             onMouseEnter={() => setShowControls(true)}
             onMouseLeave={() => setShowControls(false)}
@@ -123,7 +134,6 @@ export default function VideoPlayer({
                     setIsPlaying(true);
                     setIsAnyVideoPlaying(true);
                     onPlayStateChange?.(true);
-                    // Doble check de dimensiones al dar play por si acaso
                     if (playerRef.current) updateDimensions(playerRef.current);
                 }}
                 onPause={() => {
