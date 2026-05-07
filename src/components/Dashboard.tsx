@@ -7,7 +7,8 @@ import ThemeToggle from "@/components/ThemeToggle";
 import AdminPanel from "@/components/AdminPanel";
 import PremiumToast, { PremiumToastItem, PremiumToastType } from "@/components/PremiumToast";
 import { supabase } from "@/lib/supabase";
-import { Send, Lock, User, MessageSquare, Heart, LogOut, Shield, Edit2, Save, X, Clapperboard, Trash2, Volume2, VolumeX } from "lucide-react";
+import { Send, Lock, User, MessageSquare, Heart, LogOut, Shield, Edit2, Save, X, Clapperboard, Trash2, Volume2, VolumeX, Sparkles, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import VideoUpload from "@/components/VideoUpload";
 import { useEffect, useRef } from "react";
 
@@ -38,13 +39,15 @@ const ROMANTIC_BDAY_TRACKS = [
 const TAB_META = {
     mensajes: { label: "Mensajes", icon: MessageSquare },
     videos: { label: "Videos", icon: Clapperboard },
+    memorias: { label: "Memorias", icon: Sparkles },
     admin: { label: "Admin", icon: Shield },
 } as const;
 
 export default function Dashboard() {
     const { role, userName, guestId, logout, setGlobalPause, isAnyVideoPlaying } = useAuth();
+    const router = useRouter();
     const shouldReduceMotion = useReducedMotion();
-    const [activeTab, setActiveTab] = useState<"mensajes" | "videos" | "admin">("mensajes");
+    const [activeTab, setActiveTab] = useState<"mensajes" | "videos" | "memorias" | "admin">("mensajes");
     const [isMuted, setIsMuted] = useState(false);
     const [baseVolume, setBaseVolume] = useState(0.12);
     const [isCompactTabs, setIsCompactTabs] = useState(false);
@@ -125,8 +128,8 @@ export default function Dashboard() {
         return () => window.removeEventListener("resize", syncCompactTabs);
     }, []);
 
-    const handleTabChange = (tab: "mensajes" | "videos" | "admin") => {
-        setGlobalPause(tab !== "videos");
+    const handleTabChange = (tab: "mensajes" | "videos" | "memorias" | "admin") => {
+        setGlobalPause(tab !== "videos" && tab !== "memorias");
         setActiveTab(tab);
     };
 
@@ -168,33 +171,36 @@ export default function Dashboard() {
         loadData();
     }, [role, guestId]);
 
-    // Cargar videos guardados localmente (fuente Cloudinary)
+    // Cargar videos desde Supabase (Centralizado)
     useEffect(() => {
-        if (!role) return;
-
-        try {
-            const raw = localStorage.getItem(VIDEO_STORAGE_KEY);
-            if (!raw) {
+        const loadVideos = async () => {
+            if (!role) return;
+            try {
+                const { data, error } = await supabase
+                    .from('videos')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (data && !error) {
+                    setVideos(data.map(v => ({
+                        ...v,
+                        publicId: v.publicId || v.public_id
+                    })));
+                } else if (error) {
+                    throw error;
+                }
+            } catch (err) {
+                console.error("Error loading videos from Supabase:", err);
+                // Fallback a localStorage si falla la red
+                const raw = localStorage.getItem(VIDEO_STORAGE_KEY);
+                if (raw) {
+                    setVideos(JSON.parse(raw));
+                }
+            } finally {
                 setVideosHydrated(true);
-                return;
             }
-
-            const parsed = JSON.parse(raw) as Video[];
-            if (Array.isArray(parsed)) {
-                setVideos(
-                    parsed
-                        .filter((video) => Boolean(video?.id && video?.publicId))
-                        .map((video) => ({
-                            ...video,
-                            ownerId: video.ownerId || "",
-                        }))
-                );
-            }
-        } catch {
-            pushToast("info", "Galeria local", "No se pudo leer la galeria local anterior. Se iniciara una nueva.");
-        } finally {
-            setVideosHydrated(true);
-        }
+        };
+        loadVideos();
     }, [role]);
 
     useEffect(() => {
@@ -409,7 +415,11 @@ export default function Dashboard() {
                 {/* NAVEGACIÓN POR PESTAÑAS (TABS) LUXURY - iOS Style */}
                 <div className="max-w-2xl mx-auto mb-12 lg:mb-24 px-2 sm:px-4 md:px-0">
                     <div className="p-1.5 glass rounded-2xl sm:rounded-3xl flex border border-b-gold/10 shadow-xl sm:shadow-2xl gap-1 sm:gap-1.5">
-                        {(['mensajes', 'videos', 'admin'] as const).filter(t => t !== 'admin' || role === 'admin' || role === 'principal').map((tab) => {
+                        {(['mensajes', 'videos', 'memorias', 'admin'] as const).filter(t => {
+                            if (t === 'admin') return role === 'admin';
+                            if (t === 'memorias') return role === 'admin' || role === 'principal';
+                            return true;
+                        }).map((tab) => {
                             const Icon = TAB_META[tab].icon;
                             const label = TAB_META[tab].label;
 
@@ -442,11 +452,40 @@ export default function Dashboard() {
                                 className="space-y-16"
                             >
                                 {/* BIENVENIDA PERSONALIZADA */}
+                                {role === "principal" && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="text-center p-8 sm:p-12 bg-gradient-to-br from-b-gold/20 via-transparent to-transparent backdrop-blur-sm rounded-[3rem] border border-b-gold/20 shadow-2xl space-y-6"
+                                    >
+                                        <div className="relative inline-block">
+                                            <div className="absolute inset-0 bg-b-gold/40 blur-2xl rounded-full animate-pulse" />
+                                            <Sparkles className="relative w-12 h-12 text-b-gold mx-auto mb-2" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-4xl font-serif text-b-gold mb-2 italic">¡Felicidades, Reina {userName}!</h2>
+                                            <p className="text-gray-500 dark:text-gray-300 max-w-lg mx-auto text-sm leading-relaxed">
+                                                Hoy el mundo celebra tu vida. Hemos preparado una sección especial para que guardes los mejores momentos de este día.
+                                            </p>
+                                        </div>
+                                        
+                                        <div className="pt-4">
+                                            <button 
+                                                onClick={() => handleTabChange("memorias")}
+                                                className="px-8 py-4 bg-b-gold text-b-blue-950 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 mx-auto"
+                                            >
+                                                Ver Mis Memorias
+                                                <ChevronRight className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                )}
+
                                 {role === "user" && (
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.95 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        className="text-center p-12 bg-white/5 backdrop-blur-sm rounded-[3rem] border border-b-gold/20"
+                                        className="text-center p-12 bg-white/5 backdrop-blur-sm rounded-[3rem] border border-white/10"
                                     >
                                         <Heart className="w-12 h-12 text-b-gold mx-auto mb-6 animate-pulse" />
                                         <h2 className="text-4xl font-serif text-b-gold mb-2 italic">¡Bienvenido, {userName}!</h2>
@@ -633,17 +672,36 @@ export default function Dashboard() {
                                         <VideoUpload
                                             userName={userName || "Invitado"}
                                             onSuccess={async (publicId: string) => {
-                                                const newVideo: Video = {
-                                                    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                                                const videoData = {
                                                     publicId,
                                                     autor: userName || "Invitado",
                                                     titulo: "Momento Mágico",
-                                                    ownerId: guestId || undefined,
-                                                    created_at: new Date().toISOString(),
+                                                    ownerId: guestId || null
+                                                };
+
+                                                const { data, error } = await supabase
+                                                    .from('videos')
+                                                    .insert([videoData])
+                                                    .select()
+                                                    .single();
+
+                                                if (error) {
+                                                    console.error("Error saving video to DB:", error);
+                                                    pushToast("error", "Error de Nube", "El video se subió pero no se pudo registrar en la base de datos.");
+                                                    return;
+                                                }
+
+                                                const newVideo: Video = {
+                                                    id: data.id,
+                                                    publicId: data.publicId,
+                                                    autor: data.autor,
+                                                    titulo: data.titulo,
+                                                    ownerId: data.ownerId,
+                                                    created_at: data.created_at,
                                                 };
 
                                                 setVideos((prev) => [newVideo, ...prev.filter((v) => v.publicId !== publicId)]);
-                                                pushToast("success", "Video agregado", "El video se subio a Cloudinary y ya esta disponible en la galeria.");
+                                                pushToast("success", "Video agregado", "El video se subió y registró correctamente.");
                                             }}
                                         />
                                     </div>
@@ -680,6 +738,33 @@ export default function Dashboard() {
                                         </p>
                                     </div>
                                 )}
+                            </motion.section>
+                        ) : activeTab === "memorias" ? (
+                            <motion.section
+                                key="memorias"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="min-h-[60vh] flex flex-col items-center justify-center"
+                            >
+                                <div className="glass p-12 rounded-[3.5rem] border border-b-gold/20 text-center max-w-2xl space-y-8">
+                                    <div className="w-20 h-20 bg-b-gold/20 rounded-3xl flex items-center justify-center text-b-gold mx-auto">
+                                        <Sparkles className="w-10 h-10" />
+                                    </div>
+                                    <div className="space-y-4">
+                                        <h2 className="text-4xl font-serif italic text-white">Generador de Memorias</h2>
+                                        <p className="text-gray-400 font-poppins text-sm leading-relaxed">
+                                            Selecciona tus momentos favoritos y deja que la IA cree un compilado mágico con música de fondo para ti.
+                                        </p>
+                                    </div>
+                                    <button 
+                                        onClick={() => router.push("/admin/memories")}
+                                        className="w-full h-16 bg-b-gold text-b-blue-950 rounded-2xl flex items-center justify-center gap-3 font-poppins font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 transition-all"
+                                    >
+                                        Abrir Generador de Highlights
+                                        <ChevronRight className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </motion.section>
                         ) : (
                             <motion.section
