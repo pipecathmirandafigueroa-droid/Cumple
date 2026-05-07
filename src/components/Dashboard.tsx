@@ -502,7 +502,7 @@ export default function Dashboard() {
                                                         src={latestMemory.url} 
                                                         controls 
                                                         className="w-full h-full rounded-[1.5rem] object-cover"
-                                                        poster={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload/c_fill,w_800,h_450,so_0/${latestMemory.url.split('/').pop()?.split('.')[0]}.jpg`}
+                                                        poster={latestMemory.url.replace(".mp4", ".jpg")}
                                                     />
                                                 </div>
                                                 <p className="text-[10px] text-gray-500 italic font-serif">"{latestMemory.title}"</p>
