@@ -308,9 +308,19 @@ export default function Dashboard() {
         return video.autor === (userName || "Invitado");
     };
 
-    const deleteVideo = (videoId: string) => {
+    const deleteVideo = async (videoId: string) => {
+        const { error } = await supabase
+            .from('videos')
+            .delete()
+            .eq('id', videoId);
+
+        if (error) {
+            pushToast("error", "Error al eliminar", `No se pudo eliminar el video de la base de datos: ${error.message}`);
+            return;
+        }
+
         setVideos((prev) => prev.filter((video) => video.id !== videoId));
-        pushToast("success", "Video eliminado", "El video se elimino de la galeria.");
+        pushToast("success", "Video eliminado", "El video se elimino de la galeria y de la base de datos.");
     };
 
     const saveEditedMessage = async (messageId: string) => {
@@ -713,10 +723,10 @@ export default function Dashboard() {
                                             userName={userName || "Invitado"}
                                             onSuccess={async (publicId: string) => {
                                                 const videoData = {
-                                                    publicId,
+                                                    public_id: publicId,
                                                     autor: userName || "Invitado",
                                                     titulo: "Momento Mágico",
-                                                    ownerId: guestId || null
+                                                    owner_id: guestId || null
                                                 };
 
                                                 const { data, error } = await supabase
@@ -733,10 +743,10 @@ export default function Dashboard() {
 
                                                 const newVideo: Video = {
                                                     id: data.id,
-                                                    publicId: data.publicId,
+                                                    publicId: data.public_id || data.publicId,
                                                     autor: data.autor,
                                                     titulo: data.titulo,
-                                                    ownerId: data.ownerId,
+                                                    ownerId: data.owner_id || data.ownerId,
                                                     created_at: data.created_at,
                                                 };
 
