@@ -871,19 +871,19 @@ export default function Dashboard() {
                                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                                 animate={{ scale: 1, opacity: 1, y: 0 }}
                                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                                className="relative w-full max-w-4xl aspect-video sm:aspect-auto sm:max-h-[85vh] glass rounded-[2rem] sm:rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col"
+                                className="relative w-full max-w-5xl h-auto max-h-[90vh] glass rounded-[2rem] sm:rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col"
                             >
                                 {/* Botón Cerrar */}
                                 <button
                                     onClick={() => setSelectedVideo(null)}
-                                    className="absolute top-6 right-6 z-20 p-3 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors border border-white/10"
+                                    className="absolute top-6 right-6 z-30 p-3 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors border border-white/10 backdrop-blur-md"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
 
-                                {/* Contenedor Video */}
-                                <div className="flex-1 bg-black flex items-center justify-center overflow-hidden">
-                                    <div className="w-full h-full max-w-lg aspect-[9/16] py-8">
+                                {/* Contenedor Video Adaptativo */}
+                                <div className="relative flex-1 bg-black/40 flex items-center justify-center overflow-hidden min-h-[40vh]">
+                                    <div className="w-full h-full max-w-[min(100%,500px)] mx-auto p-4 sm:p-8">
                                         <VideoPlayer 
                                             publicId={selectedVideo.public_id}
                                             controls={true}
@@ -892,13 +892,13 @@ export default function Dashboard() {
                                     </div>
                                 </div>
 
-                                {/* Info Footer */}
-                                <div className="p-6 sm:p-10 bg-gradient-to-t from-black/80 to-transparent border-t border-white/5 space-y-2">
+                                {/* Info Footer Elevado */}
+                                <div className="relative z-10 p-6 sm:p-8 bg-gradient-to-t from-black via-black/80 to-transparent border-t border-white/5 space-y-2">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-[1px] bg-b-gold" />
                                         <span className="text-[10px] font-black text-b-gold uppercase tracking-[0.5em]">{selectedVideo.autor}</span>
                                     </div>
-                                    <h2 className="text-2xl sm:text-4xl font-serif italic text-white">{selectedVideo.titulo}</h2>
+                                    <h2 className="text-xl sm:text-3xl font-serif italic text-white">{selectedVideo.titulo}</h2>
                                 </div>
                             </motion.div>
                         </motion.div>
