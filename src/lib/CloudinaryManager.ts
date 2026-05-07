@@ -57,11 +57,16 @@ export class CloudinaryManager {
     }
 
     // 3. Audio Overlay (bday_theme)
-    if (audioPublicId) {
-        // En @cloudinary/url-gen, los audios se añaden como capas
-        myVideo.overlay(
-            source(audio(audioPublicId))
-        );
+    // Nota: Si el audio no existe en Cloudinary, la URL puede fallar.
+    // En una implementación real, este ID debería ser validado o subido previamente.
+    if (audioPublicId && audioPublicId !== 'none') {
+        try {
+            myVideo.overlay(
+                source(audio(audioPublicId))
+            );
+        } catch (e) {
+            console.warn("No se pudo añadir el audio overlay:", e);
+        }
     }
 
     return myVideo.toURL();

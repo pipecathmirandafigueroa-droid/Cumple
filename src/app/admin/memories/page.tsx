@@ -171,7 +171,10 @@ export default function MemoriesProPage() {
                     <div className="flex items-center gap-4">
                         <CldUploadWidget 
                             uploadPreset="birthday_videos"
-                            options={{ resourceType: 'video', clientAllowedFormats: ['mp4', 'mov', 'webm'] }}
+                            options={{ 
+                                resourceType: 'auto', 
+                                clientAllowedFormats: ['mp4', 'mov', 'webm', 'mp3', 'wav', 'm4a'] 
+                            }}
                             onSuccess={() => fetchVideos()}
                         >
                             {({ open }) => (
@@ -271,10 +274,35 @@ export default function MemoriesProPage() {
                                 <Music className="w-5 h-5 text-b-gold" />
                                 <h3 className="text-xl font-playfair font-bold">Soundtrack</h3>
                             </div>
-                            <div className="p-4 rounded-2xl bg-b-gold/10 border border-b-gold/20 flex items-center justify-between">
-                                <span className="text-xs font-bold uppercase tracking-widest text-b-gold">Birthday Theme</span>
-                                <CheckCircle2 className="w-4 h-4 text-b-gold" />
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => setSelectedAudio('bday_theme')}
+                                    className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${
+                                        selectedAudio === 'bday_theme'
+                                        ? "bg-b-gold/10 border-b-gold text-b-gold"
+                                        : "bg-white/5 border-white/5 text-white/40"
+                                    }`}
+                                >
+                                    <span className="text-xs font-bold uppercase tracking-widest">Birthday Theme</span>
+                                    {selectedAudio === 'bday_theme' && <CheckCircle2 className="w-4 h-4" />}
+                                </button>
+                                <button
+                                    onClick={() => setSelectedAudio('none')}
+                                    className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${
+                                        selectedAudio === 'none'
+                                        ? "bg-white/20 border-white/40 text-white"
+                                        : "bg-white/5 border-white/5 text-white/40"
+                                    }`}
+                                >
+                                    <span className="text-xs font-bold uppercase tracking-widest">Sin Música de Fondo</span>
+                                    {selectedAudio === 'none' && <CheckCircle2 className="w-4 h-4" />}
+                                </button>
                             </div>
+                            {selectedAudio === 'bday_theme' && (
+                                <p className="text-[9px] text-b-gold/50 italic px-2">
+                                    * Requiere que el archivo 'bday_theme' esté subido en Cloudinary.
+                                </p>
+                            )}
                         </div>
 
                         {/* Generación / Resultado */}
