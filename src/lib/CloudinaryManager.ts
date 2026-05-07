@@ -1,11 +1,11 @@
-import { Cloudinary } from "@cloudinary/url-gen";
+import { Cloudinary, VideoTransformation } from "@cloudinary/url-gen";
 import { concatenate } from "@cloudinary/url-gen/actions/videoEdit";
-import { videoSource } from "@cloudinary/url-gen/qualifiers/videoSource";
+import { video, audio } from "@cloudinary/url-gen/qualifiers/source";
 import { format, quality } from "@cloudinary/url-gen/actions/delivery";
-import { codec } from "@cloudinary/url-gen/actions/transcode";
-import { resize } from "@cloudinary/url-gen/actions/resize";
+import { videoCodec } from "@cloudinary/url-gen/actions/transcode";
+import { h264 } from "@cloudinary/url-gen/qualifiers/videoCodec";
+import { fill } from "@cloudinary/url-gen/actions/resize";
 import { source } from "@cloudinary/url-gen/actions/overlay";
-import { audio } from "@cloudinary/url-gen/qualifiers/source";
 import { Position } from "@cloudinary/url-gen/qualifiers/position";
 import { compass } from "@cloudinary/url-gen/qualifiers/gravity";
 
@@ -37,19 +37,21 @@ export class CloudinaryManager {
 
     // 1. Normalización Crítica (Recomendada por el Prompt Maestro)
     myVideo
-      .resize(resize.fill().width(720).height(1280)) // Formato Vertical Reels/TikTok
-      .transcode(codec('h264'))
+      .resize(fill().width(720).height(1280)) // Formato Vertical Reels/TikTok
+      .transcode(videoCodec(h264()))
       .delivery(quality('auto'))
       .delivery(format('auto'));
 
     // 2. Concatenación de videos adicionales
     for (let i = 1; i < publicIds.length; i++) {
-      // Nota: En la versión actual de @cloudinary/url-gen, el concatenate 
-      // se puede aplicar como una acción de edición de video.
       myVideo.videoEdit(
-        concatenate(videoSource(publicIds[i]).transformation(
-          // Aplicamos la misma normalización a cada clip concatenado
-          this.cld.video(publicIds[i]).resize(resize.fill().width(720).height(1280)).transcode(codec('h264')).delivery(quality('auto')).delivery(format('auto'))
+        concatenate(video(publicIds[i]).transformation(
+          // Aplicamos la misma normalización a cada clip concatenado usando VideoTransformation
+          new VideoTransformation()
+            .resize(fill().width(720).height(1280))
+            .transcode(videoCodec(h264()))
+            .delivery(quality('auto'))
+            .delivery(format('auto'))
         ))
       );
     }
